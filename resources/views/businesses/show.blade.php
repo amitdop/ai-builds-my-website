@@ -86,6 +86,7 @@
             </div>
         @endif
 
+@include('businesses._uploads')
         <a class="button" href="{{ route('businesses.create') }}">Add Another Business</a>
     </div>
 </body>

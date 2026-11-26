@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Business extends Model
 {
@@ -26,4 +27,10 @@ class Business extends Model
         'generated_content' => 'array',
         'published_at' => 'datetime',
     ];
+
+    // All files uploaded for this business.
+    public function documents(): HasMany
+    {
+        return $this->hasMany(Document::class);
+    }
 }
