@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Business;
+use App\Services\TextExtractor;
 use Illuminate\Http\Request;
 
 class DocumentController extends Controller
 {
     // Receive uploaded files for one business and save them.
-    public function store(Request $request, Business $business)
+    public function store(Request $request, Business $business, TextExtractor $textExtractor)
     {
         $request->validate([
             'files' => ['required', 'array', 'max:10'],
@@ -26,15 +27,17 @@ class DocumentController extends Controller
             $name = $file->getClientOriginalName();
 
             // Saved with a random name inside storage/app/public/documents/{id}
-            $path = $file->store('documents/' . $business->id, 'public');
+            $path = $file->store('documents/'.$business->id, 'public');
 
-            $business->documents()->create([
+            $document = $business->documents()->create([
                 'original_name' => $name,
                 'stored_path' => $path,
                 'mime_type' => $mime,
                 'size' => $size,
                 'kind' => str_starts_with($mime, 'image/') ? 'image' : 'document',
             ]);
+
+            $textExtractor->extract($document);
         }
 
         return redirect()

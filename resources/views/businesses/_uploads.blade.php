@@ -1,48 +1,57 @@
-<style>
-    .upload-box { border: 2px dashed #c7d2fe; border-radius: 10px; padding: 20px; background: #f8faff; }
-    .upload-box p { margin-top: 0; color: #555; }
-    .success { background: #dcfce7; color: #166534; padding: 12px; border-radius: 6px; margin: 16px 0; }
-    .error-box { background: #fee2e2; color: #991b1b; padding: 12px; border-radius: 6px; margin: 16px 0; }
-    .error-box ul { margin: 0; padding-left: 20px; }
-    .files { list-style: none; padding: 0; margin: 0; }
-    .files li { padding: 10px 0; border-bottom: 1px solid #eee; }
-    .muted { color: #777; font-size: 14px; }
-</style>
+<div class="upload-panel">
+    @if(session('status'))
+        <div class="form-alert success-alert" role="status">{{ session('status') }}</div>
+    @endif
 
-<h2 style="margin-top:36px">Documents and photos</h2>
+    @if($errors->any())
+        <div class="form-alert" role="alert">
+            <strong>We couldn't upload those files.</strong>
+            <ul>
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
-@if(session('status'))
-    <div class="success">{{ session('status') }}</div>
-@endif
+    <form class="upload-form" method="POST" action="{{ route('documents.store', $business) }}" enctype="multipart/form-data">
+        @csrf
+        <label class="file-picker" for="business-files">
+            <span class="file-picker-icon" aria-hidden="true">↑</span>
+            <strong>Choose files for your journey</strong>
+            <span>PDF, JPG, PNG, or WEBP · Up to 10 files, 10 MB each</span>
+        </label>
+        <input class="file-input" id="business-files" type="file" name="files[]" multiple accept=".pdf,.jpg,.jpeg,.png,.webp" required>
+        <button class="primary-cta upload-submit" type="submit">Upload materials <span aria-hidden="true">→</span></button>
+    </form>
 
-@if($errors->any())
-    <div class="error-box">
-        <ul>
-            @foreach($errors->all() as $error)
-                <li>{{ $error }}</li>
+    <div class="uploaded-heading">
+        <h3>Your uploaded files</h3>
+        <span>{{ $business->documents->count() }} {{ \Illuminate\Support\Str::plural('file', $business->documents->count()) }}</span>
+    </div>
+
+    @if($business->documents->isEmpty())
+        <div class="empty-files">
+            <span aria-hidden="true">⌁</span>
+            <p>No materials yet. Your first upload will show up here.</p>
+        </div>
+    @else
+        <ul class="file-list">
+            @foreach($business->documents as $doc)
+                <li class="file-row">
+                    <span class="document-icon" aria-hidden="true">{{ $doc->kind === 'image' ? '▧' : '▤' }}</span>
+                    <div class="file-details">
+                        <a href="{{ asset('storage/' . $doc->stored_path) }}" target="_blank" rel="noopener noreferrer">{{ $doc->original_name }}</a>
+                        <span>{{ ucfirst($doc->kind) }} · {{ number_format($doc->size / 1024, 0) }} KB</span>
+                        @if($doc->extraction_error)
+                            <span class="extraction-error">{{ $doc->extraction_error }}</span>
+                        @endif
+                    </div>
+                    <span class="extraction-status status-{{ $doc->extraction_status }}">
+                        <i></i>{{ ucfirst($doc->extraction_status) }}
+                    </span>
+                </li>
             @endforeach
         </ul>
-    </div>
-@endif
-
-<form class="upload-box" method="POST" action="{{ route('documents.store', $business) }}" enctype="multipart/form-data">
-    @csrf
-    <p>Upload price lists, brochures (PDF) and business photos (JPG, PNG, WEBP). Up to 10 files, 10 MB each.</p>
-    <input type="file" name="files[]" multiple accept=".pdf,.jpg,.jpeg,.png,.webp" required>
-    <br>
-    <button class="button" type="submit">Upload files</button>
-</form>
-
-<h2 style="margin-top:36px">Uploaded files ({{ $business->documents->count() }})</h2>
-@if($business->documents->isEmpty())
-    <p class="muted">No files uploaded yet.</p>
-@else
-    <ul class="files">
-        @foreach($business->documents as $doc)
-            <li>
-                <a href="{{ asset('storage/' . $doc->stored_path) }}" target="_blank" rel="noopener noreferrer">{{ $doc->original_name }}</a>
-                <span class="muted">· {{ ucfirst($doc->kind) }} · {{ number_format($doc->size / 1024, 0) }} KB</span>
-            </li>
-        @endforeach
-    </ul>
-@endif
+    @endif
+</div>
