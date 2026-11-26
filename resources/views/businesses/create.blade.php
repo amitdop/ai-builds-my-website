@@ -38,9 +38,9 @@
                         <span class="route-step-mark">02</span>
                         <div><strong>Your materials</strong><span>Links, PDFs, and photos</span></div>
                     </div>
-                    <div class="route-step planned">
+                    <div class="route-step">
                         <span class="route-step-mark">03</span>
-                        <div><strong>Your website</strong><span>AI generation is in development</span></div>
+                        <div><strong>Your website</strong><span>Review, edit, and publish your draft</span></div>
                     </div>
                 </div>
                 <p class="form-footnote">No website is generated yet. This step saves your business details so you can add supporting materials next.</p>

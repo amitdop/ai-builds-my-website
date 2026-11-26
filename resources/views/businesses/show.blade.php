@@ -67,8 +67,17 @@
                 @if(session('draft_status'))
                     <div class="generation-alert success-alert" role="status">{{ session('draft_status') }}</div>
                 @endif
+                @if(session('publish_status'))
+                    <div class="generation-alert success-alert" role="status">
+                        {{ session('publish_status') }}
+                        <a href="{{ route('sites.show', $business->slug) }}" target="_blank" rel="noopener noreferrer">Open the public website</a>
+                    </div>
+                @endif
                 @if($errors->has('draft') && ! $business->generated_content)
                     <div class="generation-alert form-alert" role="alert">{{ $errors->first('draft') }}</div>
+                @endif
+                @if($errors->has('publish') && ! $business->generated_content)
+                    <div class="generation-alert form-alert" role="alert">{{ $errors->first('publish') }}</div>
                 @endif
                 @unless($canManageBusiness)
                     <p class="generation-privacy">
@@ -82,7 +91,7 @@
                     <p class="generation-privacy">Edit access is tied to this browser session. If the session expires or its cookies are cleared, this profile becomes read-only.</p>
                 @endunless
 
-                @if($business->status === 'failed' && $business->error_message)
+                @if($business->error_message)
                     <div class="generation-alert form-alert" role="alert">
                         {{ $business->error_message }}
                         <span>Your business details and uploads are still saved. You can try again.</span>
@@ -211,6 +220,41 @@
                                 <button class="primary-cta generation-button draft-save-button" type="submit">Save edits <span aria-hidden="true">→</span></button>
                             </form>
                         </details>
+
+                        <div class="publish-panel">
+                            <div>
+                                <p class="section-kicker">PUBLIC WEBSITE</p>
+                                <h3>{{ $business->published_content ? 'Your website is live' : 'Ready to publish?' }}</h3>
+                                @if($business->published_content)
+                                    <a class="published-preview-link" href="{{ route('sites.show', $business->slug) }}" target="_blank" rel="noopener noreferrer">
+                                        View the current public version <span aria-hidden="true">↗</span>
+                                    </a>
+                                    <p class="draft-edit-note">Saved edits and regenerated drafts stay private until you publish the updates.</p>
+                                @endif
+                            </div>
+
+                            @if($hasUnpublishedChanges)
+                                <p class="publish-disclosure">Unresolved conflicting details and uploaded files are excluded from the public page. Owner-edited facts are shown as business-provided.</p>
+
+                                @if($errors->has('publish') || $errors->has('confirm_review'))
+                                    <div class="form-alert" role="alert">
+                                        {{ $errors->first('publish') ?: $errors->first('confirm_review') }}
+                                    </div>
+                                @endif
+
+                                <form method="POST" action="{{ route('businesses.publish', $business) }}">
+                                    @csrf
+                                    <label class="publish-confirmation">
+                                        <input type="checkbox" name="confirm_review" value="yes" required {{ old('confirm_review') ? 'checked' : '' }}>
+                                        I reviewed this draft and confirm I want this version to be public.
+                                    </label>
+                                    <button class="primary-cta generation-button" type="submit">
+                                        {{ $business->published_content ? 'Publish updates' : 'Publish website' }}
+                                        <span aria-hidden="true">→</span>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     @endif
                 @endif
             </section>

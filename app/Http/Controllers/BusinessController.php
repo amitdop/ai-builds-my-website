@@ -23,10 +23,10 @@ class BusinessController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'city' => ['required', 'string', 'max:255'],
-            'google_business_url' => ['nullable', 'url', 'max:500'],
-            'facebook_url' => ['nullable', 'url', 'max:500'],
-            'instagram_url' => ['nullable', 'url', 'max:500'],
-            'website_url' => ['nullable', 'url', 'max:500'],
+            'google_business_url' => ['nullable', 'url:http,https', 'max:500'],
+            'facebook_url' => ['nullable', 'url:http,https', 'max:500'],
+            'instagram_url' => ['nullable', 'url:http,https', 'max:500'],
+            'website_url' => ['nullable', 'url:http,https', 'max:500'],
         ]);
 
         $ownerToken = $request->session()->get(Business::OWNER_SESSION_KEY);
@@ -50,12 +50,18 @@ class BusinessController extends Controller
             'canManageBusiness' => $business->isOwnedBySession(
                 $request->session()->get(Business::OWNER_SESSION_KEY),
             ),
+            'hasUnpublishedChanges' => is_array($business->generated_content)
+                && (
+                    $business->published_content === null
+                    || $business->published_content != $business->generated_content
+                ),
         ]);
     }
 
     public function generate(Request $request, Business $business, GeminiWebsiteContentGenerator $generator): RedirectResponse
     {
         $this->authorizeOwnerSession($business, $request);
+        $hasPublishedSite = is_array($business->published_content);
 
         $business->update([
             'status' => 'generating',
@@ -66,7 +72,7 @@ class BusinessController extends Controller
             $content = $generator->generate($business);
         } catch (WebsiteGenerationException $exception) {
             $business->update([
-                'status' => 'failed',
+                'status' => $hasPublishedSite ? 'published' : 'failed',
                 'error_message' => $exception->getMessage(),
             ]);
 
@@ -74,7 +80,7 @@ class BusinessController extends Controller
         }
 
         $business->update([
-            'status' => 'generated',
+            'status' => $hasPublishedSite ? 'published' : 'generated',
             'generated_content' => $content,
             'error_message' => null,
         ]);
@@ -157,6 +163,43 @@ class BusinessController extends Controller
         return redirect()
             ->route('businesses.show', $business)
             ->with('draft_status', 'Your edits are saved. Review owner-edited facts against their source before using them.');
+    }
+
+    public function publish(Request $request, Business $business): RedirectResponse
+    {
+        $this->authorizeOwnerSession($business, $request);
+
+        $content = $business->generated_content;
+
+        if (! is_array($content) || ! is_string($content['tagline'] ?? null) || ! is_array($content['facts'] ?? null)) {
+            return redirect()
+                ->route('businesses.show', $business)
+                ->withErrors(['publish' => 'Generate a valid draft before publishing a website.']);
+        }
+
+        $request->validate([
+            'confirm_review' => ['accepted'],
+        ]);
+
+        $slug = $business->slug;
+
+        if (! is_string($slug) || $slug === '') {
+            $slugBase = Str::slug($business->name.'-'.$business->city);
+            $slugBase = $slugBase === '' ? 'business' : mb_substr($slugBase, 0, 180);
+            $slug = $slugBase.'-'.$business->getKey();
+        }
+
+        $business->update([
+            'slug' => $slug,
+            'published_content' => $content,
+            'published_at' => now(),
+            'status' => 'published',
+            'error_message' => null,
+        ]);
+
+        return redirect()
+            ->route('businesses.show', $business)
+            ->with('publish_status', 'Your website is live.');
     }
 
     private function authorizeOwnerSession(Business $business, Request $request): void

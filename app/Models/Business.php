@@ -19,6 +19,7 @@ class Business extends Model
         'website_url',
         'status',
         'generated_content',
+        'published_content',
         'slug',
         'published_at',
         'error_message',
@@ -32,6 +33,7 @@ class Business extends Model
     // Convert these fields automatically when reading and saving.
     protected $casts = [
         'generated_content' => 'array',
+        'published_content' => 'array',
         'published_at' => 'datetime',
     ];
 

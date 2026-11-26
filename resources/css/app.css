@@ -2059,3 +2059,226 @@ a:focus-visible {
         animation: none;
     }
 }
+
+.success-alert a {
+    display: inline-block;
+    margin-left: 8px;
+    color: var(--lime);
+}
+
+.publish-panel {
+    display: grid;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 18px;
+    border: 1px solid rgb(210 255 114 / 18%);
+    border-radius: 12px;
+    background: rgb(7 11 8 / 25%);
+}
+
+.publish-panel h3 {
+    margin: 5px 0 8px;
+    color: var(--paper);
+    font-size: 15px;
+    font-weight: 500;
+}
+
+.published-preview-link {
+    color: var(--lime);
+    font-size: 9px;
+}
+
+.publish-panel .draft-edit-note {
+    margin-top: 7px;
+}
+
+.publish-disclosure {
+    margin: 0;
+    color: #aab4a5;
+    font-size: 9px;
+    line-height: 1.65;
+}
+
+.publish-panel form {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.publish-confirmation {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    color: #cbd4c6;
+    font-size: 9px;
+    line-height: 1.5;
+}
+
+.publish-confirmation input {
+    flex: 0 0 auto;
+    margin: 1px 0 0;
+    accent-color: var(--lime);
+}
+
+.published-label {
+    color: var(--lime);
+    font-size: 8px;
+    letter-spacing: .12em;
+}
+
+.published-site {
+    width: min(100% - 40px, 1000px);
+    padding: 48px 0 30px;
+}
+
+.published-hero {
+    position: relative;
+    overflow: hidden;
+    min-height: 300px;
+    padding: clamp(32px, 7vw, 72px);
+    border: 1px solid rgb(210 255 114 / 20%);
+    border-radius: 20px;
+    background:
+        radial-gradient(ellipse at 86% 22%, rgb(210 255 114 / 12%), transparent 34%),
+        linear-gradient(145deg, #191f1a, #111611);
+    animation: arrive .6s both;
+}
+
+.published-hero::after {
+    position: absolute;
+    right: -42px;
+    bottom: -82px;
+    width: 280px;
+    height: 280px;
+    border: 1px solid rgb(210 255 114 / 16%);
+    border-radius: 50%;
+    box-shadow: 0 0 0 22px rgb(210 255 114 / 3%), 0 0 0 46px rgb(210 255 114 / 2%);
+    content: "";
+    pointer-events: none;
+}
+
+.published-hero h1 {
+    max-width: 760px;
+    margin: 22px 0 12px;
+    color: var(--paper);
+    font-size: clamp(38px, 8vw, 82px);
+    font-weight: 500;
+    letter-spacing: -.075em;
+    line-height: .98;
+    overflow-wrap: anywhere;
+}
+
+.published-tagline {
+    max-width: 620px;
+    margin: 0;
+    color: #b7c1b2;
+    font-size: clamp(14px, 2vw, 19px);
+    line-height: 1.65;
+}
+
+.published-waypoint {
+    display: inline-block;
+    margin-top: 24px;
+    color: var(--lime);
+    font-size: 20px;
+    animation: waypoint-pulse 2.8s ease-in-out infinite;
+}
+
+.published-details,
+.published-links {
+    margin-top: 38px;
+    animation: arrive .6s .1s both;
+}
+
+.published-details h2,
+.published-links h2 {
+    margin: 7px 0 18px;
+    color: var(--paper);
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 500;
+    letter-spacing: -.05em;
+}
+
+.published-facts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: 12px;
+}
+
+.published-fact {
+    padding: 18px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #141a15;
+}
+
+.published-fact h3 {
+    margin: 0 0 10px;
+    color: var(--lime);
+    font-size: 9px;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.published-fact p {
+    margin: 0;
+    color: var(--paper);
+    font-size: 12px;
+    line-height: 1.65;
+    overflow-wrap: anywhere;
+}
+
+.published-fact span {
+    display: inline-block;
+    margin-top: 12px;
+    color: #9aa49a;
+    font-size: 8px;
+}
+
+.published-link-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.published-link-list a {
+    padding: 10px 13px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    color: var(--lime);
+    font-size: 10px;
+}
+
+@keyframes waypoint-pulse {
+    50% {
+        opacity: .55;
+        transform: translateY(-4px);
+    }
+}
+
+@media (width <= 760px) {
+    .published-site {
+        width: min(100% - 28px, 1000px);
+        padding-top: 26px;
+    }
+
+    .published-hero {
+        min-height: 250px;
+        padding: 28px;
+    }
+
+    .publish-panel form {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .published-hero,
+    .published-details,
+    .published-links,
+    .published-waypoint {
+        animation: none;
+    }
+}
