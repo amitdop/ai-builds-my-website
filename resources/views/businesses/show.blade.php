@@ -44,6 +44,107 @@
                 </div>
             </section>
 
+            <section class="generation-section" aria-labelledby="generation-title">
+                <div class="generation-heading">
+                    <div>
+                        <p class="section-kicker">AI-ASSISTED FIRST DRAFT</p>
+                        <h2 id="generation-title">Turn your sources into a starting point</h2>
+                    </div>
+                    <form method="POST" action="{{ route('businesses.generate', $business) }}">
+                        @csrf
+                        <button class="primary-cta generation-button" type="submit">
+                            {{ $business->generated_content ? 'Generate again' : 'Generate a draft' }}
+                            <span aria-hidden="true">→</span>
+                        </button>
+                    </form>
+                </div>
+
+                @if(session('generation_status'))
+                    <div class="generation-alert success-alert" role="status">{{ session('generation_status') }}</div>
+                @endif
+
+                @if($business->status === 'failed' && $business->error_message)
+                    <div class="generation-alert form-alert" role="alert">
+                        {{ $business->error_message }}
+                        <span>Your business details and uploads are still saved. You can try again.</span>
+                    </div>
+                @endif
+
+                <p class="generation-privacy">
+                    Generate sends your business name, city, and text extracted from up to 10 recent readable documents
+                    (up to 10,000 characters each) to Google Gemini's free tier. Google may use free-tier content
+                    to improve its products. Avoid confidential documents. Social links are not opened and photos are not analyzed.
+                </p>
+
+                @if($business->generated_content)
+                    <div class="generated-preview">
+                        <div class="preview-heading">
+                            <div>
+                                <span class="panel-count">DRAFT PREVIEW</span>
+                                <h3>{{ $business->generated_content['title'] }}</h3>
+                                <p>{{ $business->generated_content['city'] }}</p>
+                            </div>
+                            <span class="draft-badge"><i></i> Review before use</span>
+                        </div>
+
+                        <div class="tagline-preview">
+                            <span class="fact-label">AI SUGGESTED WELCOME · REVIEW BEFORE USE</span>
+                            <p>{{ $business->generated_content['tagline'] }}</p>
+                        </div>
+
+                        @if($business->generated_content['review_notice'] ?? null)
+                            <p class="review-notice">{{ $business->generated_content['review_notice'] }}</p>
+                        @endif
+
+                        @if(count($business->generated_content['facts'] ?? []))
+                            <div class="preview-subsection">
+                                <h4>Source-backed details</h4>
+                                <ul class="generated-facts">
+                                    @foreach($business->generated_content['facts'] as $fact)
+                                        <li>
+                                            <span class="generated-field">{{ ucfirst(str_replace('_', ' ', $fact['field'])) }}</span>
+                                            <strong>{{ $fact['value'] }}</strong>
+                                            <span class="source-note">From {{ $fact['source'] }} · “{{ $fact['evidence'] }}”</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        @else
+                            <p class="no-facts-note">No source-backed details were returned. Check the original documents before using this draft.</p>
+                        @endif
+
+                        @if(count($business->generated_content['conflicts'] ?? []))
+                            <div class="preview-subsection conflict-subsection">
+                                <h4>Conflicting details to review</h4>
+                                @foreach($business->generated_content['conflicts'] as $conflict)
+                                    <div class="conflict-item">
+                                        <strong>{{ ucfirst(str_replace('_', ' ', $conflict['field'])) }}</strong>
+                                        @foreach($conflict['claims'] as $claim)
+                                            <span>{{ $claim['value'] }} <small>— {{ $claim['source'] }}</small></span>
+                                        @endforeach
+                                    </div>
+                                @endforeach
+                            </div>
+                        @endif
+
+                        @if(count($business->generated_content['missing_information'] ?? []))
+                            <div class="preview-subsection">
+                                <h4>Not found in reviewed sources</h4>
+                                <div class="missing-list">
+                                    @foreach($business->generated_content['missing_information'] as $item)
+                                        <span>{{ ucfirst(str_replace('_', ' ', $item)) }}</span>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
+
+                        @if(count($business->generated_content['unread_links'] ?? []))
+                            <p class="unread-note">Links provided but not read: {{ implode(', ', $business->generated_content['unread_links']) }}.</p>
+                        @endif
+                    </div>
+                @endif
+            </section>
+
             <section class="business-facts" aria-labelledby="facts-title">
                 <div class="content-heading">
                     <div>
@@ -100,7 +201,7 @@
                 @include('businesses._uploads')
             </section>
 
-            <p class="workspace-note"><span class="note-icon" aria-hidden="true">i</span> AI website generation and publishing are still in development. Your profile and uploaded materials are saved here.</p>
+            <p class="workspace-note"><span class="note-icon" aria-hidden="true">i</span> Full website editing and publishing are still in development. This source-backed AI draft is an early preview; check every detail before using it.</p>
         </main>
 
         <footer class="site-footer mx-auto flex flex-wrap items-center justify-between gap-4">
