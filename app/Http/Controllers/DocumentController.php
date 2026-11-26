@@ -11,6 +11,11 @@ class DocumentController extends Controller
     // Receive uploaded files for one business and save them.
     public function store(Request $request, Business $business, TextExtractor $textExtractor)
     {
+        abort_unless(
+            $business->isOwnedBySession($request->session()->get(Business::OWNER_SESSION_KEY)),
+            404,
+        );
+
         $request->validate([
             'files' => ['required', 'array', 'max:10'],
             'files.*' => ['file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240'],

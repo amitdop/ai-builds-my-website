@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Business extends Model
 {
+    public const OWNER_SESSION_KEY = 'business_owner_token';
+
     // Only these fields can be saved from a form or from code.
     protected $fillable = [
         'name',
@@ -20,6 +22,11 @@ class Business extends Model
         'slug',
         'published_at',
         'error_message',
+        'owner_session_token_hash',
+    ];
+
+    protected $hidden = [
+        'owner_session_token_hash',
     ];
 
     // Convert these fields automatically when reading and saving.
@@ -32,5 +39,12 @@ class Business extends Model
     public function documents(): HasMany
     {
         return $this->hasMany(Document::class);
+    }
+
+    public function isOwnedBySession(mixed $ownerToken): bool
+    {
+        return is_string($ownerToken)
+            && is_string($this->owner_session_token_hash)
+            && hash_equals($this->owner_session_token_hash, hash('sha256', $ownerToken));
     }
 }

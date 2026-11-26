@@ -14,5 +14,7 @@ Route::get('/businesses/{business}', [BusinessController::class, 'show'])->name(
 Route::post('/businesses/{business}/generate', [BusinessController::class, 'generate'])
     ->middleware('throttle:3,1')
     ->name('businesses.generate');
+Route::patch('/businesses/{business}/draft', [BusinessController::class, 'updateDraft'])
+    ->name('businesses.draft.update');
 
 Route::post('/businesses/{business}/documents', [DocumentController::class, 'store'])->name('documents.store');

@@ -50,18 +50,37 @@
                         <p class="section-kicker">AI-ASSISTED FIRST DRAFT</p>
                         <h2 id="generation-title">Turn your sources into a starting point</h2>
                     </div>
-                    <form method="POST" action="{{ route('businesses.generate', $business) }}">
-                        @csrf
-                        <button class="primary-cta generation-button" type="submit">
-                            {{ $business->generated_content ? 'Generate again' : 'Generate a draft' }}
-                            <span aria-hidden="true">→</span>
-                        </button>
-                    </form>
+                    @if($canManageBusiness)
+                        <form method="POST" action="{{ route('businesses.generate', $business) }}">
+                            @csrf
+                            <button class="primary-cta generation-button" type="submit">
+                                {{ $business->generated_content ? 'Generate again' : 'Generate a draft' }}
+                                <span aria-hidden="true">→</span>
+                            </button>
+                        </form>
+                    @endif
                 </div>
 
                 @if(session('generation_status'))
                     <div class="generation-alert success-alert" role="status">{{ session('generation_status') }}</div>
                 @endif
+                @if(session('draft_status'))
+                    <div class="generation-alert success-alert" role="status">{{ session('draft_status') }}</div>
+                @endif
+                @if($errors->has('draft') && ! $business->generated_content)
+                    <div class="generation-alert form-alert" role="alert">{{ $errors->first('draft') }}</div>
+                @endif
+                @unless($canManageBusiness)
+                    <p class="generation-privacy">
+                        @if($business->owner_session_token_hash)
+                            This profile is read-only in this browser session. Only the session that created it can edit, upload, or regenerate content.
+                        @else
+                            This profile was created before owner access was added, so it is read-only. Create a new business to edit it.
+                        @endif
+                    </p>
+                @else
+                    <p class="generation-privacy">Edit access is tied to this browser session. If the session expires or its cookies are cleared, this profile becomes read-only.</p>
+                @endunless
 
                 @if($business->status === 'failed' && $business->error_message)
                     <div class="generation-alert form-alert" role="alert">
@@ -88,8 +107,11 @@
                         </div>
 
                         <div class="tagline-preview">
-                            <span class="fact-label">AI SUGGESTED WELCOME · REVIEW BEFORE USE</span>
+                            <span class="fact-label">{{ ($business->generated_content['tagline_owner_edited'] ?? false) ? 'OWNER-EDITED WELCOME · REVIEW BEFORE USE' : 'AI SUGGESTED WELCOME · REVIEW BEFORE USE' }}</span>
                             <p>{{ $business->generated_content['tagline'] }}</p>
+                            @if($business->generated_content['tagline_owner_edited'] ?? false)
+                                <span class="source-note">Original AI draft: {{ $business->generated_content['tagline_original'] }}</span>
+                            @endif
                         </div>
 
                         @if($business->generated_content['review_notice'] ?? null)
@@ -98,13 +120,17 @@
 
                         @if(count($business->generated_content['facts'] ?? []))
                             <div class="preview-subsection">
-                                <h4>Source-backed details</h4>
+                                <h4>Draft business details</h4>
                                 <ul class="generated-facts">
                                     @foreach($business->generated_content['facts'] as $fact)
                                         <li>
                                             <span class="generated-field">{{ ucfirst(str_replace('_', ' ', $fact['field'])) }}</span>
                                             <strong>{{ $fact['value'] }}</strong>
-                                            <span class="source-note">From {{ $fact['source'] }} · “{{ $fact['evidence'] }}”</span>
+                                            @if($fact['owner_edited'] ?? false)
+                                                <span class="source-note">Owner-edited. This value is not automatically verified against the source. Original AI draft: {{ $fact['original_value'] }}</span>
+                                            @else
+                                                <span class="source-note">From {{ $fact['source'] }} · “{{ $fact['evidence'] }}”</span>
+                                            @endif
                                         </li>
                                     @endforeach
                                 </ul>
@@ -142,6 +168,50 @@
                             <p class="unread-note">Links provided but not read: {{ implode(', ', $business->generated_content['unread_links']) }}.</p>
                         @endif
                     </div>
+
+                    @if($canManageBusiness)
+                        <details class="draft-edit-panel">
+                            <summary>Edit the draft</summary>
+                            <form method="POST" action="{{ route('businesses.draft.update', $business) }}">
+                                @csrf
+                                @method('PATCH')
+                                <p class="draft-edit-note">Your changes are saved as owner edits. Changed facts are no longer automatically source-verified. Generating again replaces this draft.</p>
+
+                                @if($errors->has('draft') || $errors->has('facts'))
+                                    <div class="form-alert" role="alert">
+                                        {{ $errors->first('draft') ?: $errors->first('facts') }}
+                                    </div>
+                                @endif
+
+                                <div class="draft-edit-fields">
+                                    <label for="draft-tagline">Welcome tagline</label>
+                                    <input id="draft-tagline" name="tagline" type="text" maxlength="255" required value="{{ old('tagline', $business->generated_content['tagline']) }}">
+                                    @error('tagline')
+                                        <span class="draft-field-error">{{ $message }}</span>
+                                    @enderror
+
+                                    @forelse($business->generated_content['facts'] ?? [] as $index => $fact)
+                                        <label for="draft-fact-{{ $index }}">{{ ucfirst(str_replace('_', ' ', $fact['field'])) }}</label>
+                                        <textarea id="draft-fact-{{ $index }}" name="facts[{{ $index }}][value]" maxlength="400" required>{{ old("facts.$index.value", $fact['value']) }}</textarea>
+                                        <span class="source-note">
+                                            @if($fact['owner_edited'] ?? false)
+                                                Owner-edited · originally: {{ $fact['original_value'] }}
+                                            @else
+                                                Source: {{ $fact['source'] }} · “{{ $fact['evidence'] }}”
+                                            @endif
+                                        </span>
+                                        @error("facts.$index.value")
+                                            <span class="draft-field-error">{{ $message }}</span>
+                                        @enderror
+                                    @empty
+                                        <p class="no-facts-note">No source-backed facts were returned. You can still edit the tagline.</p>
+                                    @endforelse
+                                </div>
+
+                                <button class="primary-cta generation-button draft-save-button" type="submit">Save edits <span aria-hidden="true">→</span></button>
+                            </form>
+                        </details>
+                    @endif
                 @endif
             </section>
 
@@ -201,7 +271,7 @@
                 @include('businesses._uploads')
             </section>
 
-            <p class="workspace-note"><span class="note-icon" aria-hidden="true">i</span> Full website editing and publishing are still in development. This source-backed AI draft is an early preview; check every detail before using it.</p>
+            <p class="workspace-note"><span class="note-icon" aria-hidden="true">i</span> Full website publishing is still in development. This source-backed AI draft is an early preview; check every detail before using it.</p>
         </main>
 
         <footer class="site-footer mx-auto flex flex-wrap items-center justify-between gap-4">

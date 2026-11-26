@@ -7,6 +7,7 @@ use App\Models\Business;
 use App\Services\GeminiWebsiteContentGenerator;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class BusinessController extends Controller
 {
@@ -28,19 +29,34 @@ class BusinessController extends Controller
             'website_url' => ['nullable', 'url', 'max:500'],
         ]);
 
+        $ownerToken = $request->session()->get(Business::OWNER_SESSION_KEY);
+
+        if (! is_string($ownerToken) || $ownerToken === '') {
+            $ownerToken = Str::random(64);
+            $request->session()->put(Business::OWNER_SESSION_KEY, $ownerToken);
+        }
+
+        $validated['owner_session_token_hash'] = hash('sha256', $ownerToken);
         $business = Business::create($validated);
 
         return redirect()->route('businesses.show', $business);
     }
 
     // Show one saved business.
-    public function show(Business $business)
+    public function show(Request $request, Business $business)
     {
-        return view('businesses.show', ['business' => $business]);
+        return view('businesses.show', [
+            'business' => $business,
+            'canManageBusiness' => $business->isOwnedBySession(
+                $request->session()->get(Business::OWNER_SESSION_KEY),
+            ),
+        ]);
     }
 
-    public function generate(Business $business, GeminiWebsiteContentGenerator $generator): RedirectResponse
+    public function generate(Request $request, Business $business, GeminiWebsiteContentGenerator $generator): RedirectResponse
     {
+        $this->authorizeOwnerSession($business, $request);
+
         $business->update([
             'status' => 'generating',
             'error_message' => null,
@@ -66,5 +82,88 @@ class BusinessController extends Controller
         return redirect()
             ->route('businesses.show', $business)
             ->with('generation_status', 'Your AI content draft is ready to review.');
+    }
+
+    public function updateDraft(Request $request, Business $business): RedirectResponse
+    {
+        $this->authorizeOwnerSession($business, $request);
+
+        $content = $business->generated_content;
+
+        if (! is_array($content) || ! is_array($content['facts'] ?? [])) {
+            return redirect()
+                ->route('businesses.show', $business)
+                ->withErrors(['draft' => 'Generate a draft before editing it.']);
+        }
+
+        $validated = $request->validate([
+            'tagline' => ['required', 'string', 'max:255'],
+            'facts' => ['sometimes', 'array', 'max:20'],
+            'facts.*' => ['required', 'array:value'],
+            'facts.*.value' => ['required', 'string', 'max:400'],
+        ]);
+
+        $existingFacts = $content['facts'] ?? [];
+        $submittedFacts = $validated['facts'] ?? [];
+        $existingIndices = array_keys($existingFacts);
+        $submittedIndices = array_keys($submittedFacts);
+        sort($existingIndices);
+        sort($submittedIndices);
+
+        if ($existingIndices !== $submittedIndices) {
+            return back()
+                ->withErrors(['facts' => 'Keep the draft details in place while editing.'])
+                ->withInput();
+        }
+
+        foreach ($existingFacts as $index => $fact) {
+            if (! is_array($fact) || ! is_string($fact['value'] ?? null)) {
+                return back()
+                    ->withErrors(['draft' => 'This draft cannot be edited safely. Generate a new draft and try again.'])
+                    ->withInput();
+            }
+
+            $originalValue = $fact['original_value'] ?? $fact['value'];
+            $editedValue = trim($submittedFacts[$index]['value']);
+
+            if ($editedValue === $originalValue) {
+                unset($fact['original_value'], $fact['owner_edited']);
+            } else {
+                $fact['original_value'] = $originalValue;
+                $fact['owner_edited'] = true;
+            }
+
+            $fact['value'] = $editedValue;
+            $existingFacts[$index] = $fact;
+        }
+
+        $originalTagline = $content['tagline_original'] ?? $content['tagline'] ?? '';
+        $editedTagline = trim($validated['tagline']);
+
+        if ($editedTagline === $originalTagline) {
+            unset($content['tagline_original'], $content['tagline_owner_edited']);
+        } else {
+            $content['tagline_original'] = $originalTagline;
+            $content['tagline_owner_edited'] = true;
+        }
+
+        $content['tagline'] = $editedTagline;
+        $content['facts'] = $existingFacts;
+
+        $business->update([
+            'generated_content' => $content,
+        ]);
+
+        return redirect()
+            ->route('businesses.show', $business)
+            ->with('draft_status', 'Your edits are saved. Review owner-edited facts against their source before using them.');
+    }
+
+    private function authorizeOwnerSession(Business $business, Request $request): void
+    {
+        abort_unless(
+            $business->isOwnedBySession($request->session()->get(Business::OWNER_SESSION_KEY)),
+            404,
+        );
     }
 }

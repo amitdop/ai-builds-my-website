@@ -13,6 +13,8 @@ class GenerateWebsiteContentTest extends TestCase
 {
     use RefreshDatabase;
 
+    private const OWNER_TOKEN = 'test-owner-session';
+
     public function test_generates_a_source_backed_draft_and_escapes_ai_text(): void
     {
         Http::preventStrayRequests();
@@ -165,12 +167,33 @@ class GenerateWebsiteContentTest extends TestCase
         Http::assertNothingSent();
     }
 
+    public function test_a_different_session_cannot_regenerate_a_business_draft(): void
+    {
+        Http::preventStrayRequests();
+        config(['services.gemini.api_key' => 'test-gemini-key']);
+
+        $business = $this->createBusiness();
+
+        $response = $this->withSession([
+            Business::OWNER_SESSION_KEY => 'another-session',
+        ])->post(route('businesses.generate', $business));
+
+        $response->assertNotFound();
+        $this->assertSame('draft', $business->refresh()->status);
+        Http::assertNothingSent();
+    }
+
     private function createBusiness(array $attributes = []): Business
     {
+        $this->withSession([
+            Business::OWNER_SESSION_KEY => self::OWNER_TOKEN,
+        ]);
+
         return Business::create(array_merge([
             'name' => 'Sample Cafe',
             'city' => 'Pune',
             'status' => 'draft',
+            'owner_session_token_hash' => hash('sha256', self::OWNER_TOKEN),
         ], $attributes));
     }
 
