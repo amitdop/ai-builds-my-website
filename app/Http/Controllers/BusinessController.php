@@ -37,6 +37,24 @@ class BusinessController extends Controller
         }
 
         $validated['owner_session_token_hash'] = hash('sha256', $ownerToken);
+        $normalizedName = Str::lower(trim($validated['name']));
+        $normalizedCity = Str::lower(trim($validated['city']));
+
+        $existingBusiness = Business::query()
+            ->where('owner_session_token_hash', $validated['owner_session_token_hash'])
+            ->orderByDesc('id')
+            ->get()
+            ->first(function (Business $business) use ($normalizedName, $normalizedCity): bool {
+                return Str::lower(trim($business->name)) === $normalizedName
+                    && Str::lower(trim($business->city)) === $normalizedCity;
+            });
+
+        if ($existingBusiness) {
+            return redirect()
+                ->route('businesses.show', $existingBusiness)
+                ->with('duplicate_status', 'This profile already exists in this browser, so we reopened it instead of creating a duplicate.');
+        }
+
         $business = Business::create($validated);
 
         return redirect()->route('businesses.show', $business);

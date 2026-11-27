@@ -181,6 +181,47 @@ class BusinessDraftEditingTest extends TestCase
             ->assertSee('Upload materials');
     }
 
+    public function test_same_browser_reopens_an_existing_profile_with_the_same_name_and_city(): void
+    {
+        $existing = Business::create([
+            'name' => 'Sample Cafe',
+            'city' => 'Pune',
+            'status' => 'draft',
+            'owner_session_token_hash' => hash('sha256', self::OWNER_TOKEN),
+        ]);
+
+        $response = $this->withSession([
+            Business::OWNER_SESSION_KEY => self::OWNER_TOKEN,
+        ])->post(route('businesses.store'), [
+            'name' => '  sample cafe  ',
+            'city' => ' PUNE ',
+        ]);
+
+        $response->assertRedirect(route('businesses.show', $existing));
+        $response->assertSessionHas('duplicate_status');
+        $this->assertSame(1, Business::query()->count());
+    }
+
+    public function test_another_browser_session_creates_a_separate_profile(): void
+    {
+        Business::create([
+            'name' => 'Sample Cafe',
+            'city' => 'Pune',
+            'status' => 'draft',
+            'owner_session_token_hash' => hash('sha256', self::OWNER_TOKEN),
+        ]);
+
+        $response = $this->withSession([
+            Business::OWNER_SESSION_KEY => 'another-browser-session',
+        ])->post(route('businesses.store'), [
+            'name' => 'Sample Cafe',
+            'city' => 'Pune',
+        ]);
+
+        $response->assertRedirect();
+        $this->assertSame(2, Business::query()->count());
+    }
+
     private function createOwnedBusiness(array $contentOverrides = []): Business
     {
         return Business::create([

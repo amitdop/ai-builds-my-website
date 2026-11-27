@@ -43,7 +43,7 @@
                         <div><strong>Your website</strong><span>Review, edit, and publish your draft</span></div>
                     </div>
                 </div>
-                <p class="form-footnote">No website is generated yet. This step saves your business details so you can add supporting materials next.</p>
+                <p class="form-footnote">Saving the basics lets you add materials, generate a draft, edit it, and publish a public page.</p>
             </section>
 
             <section class="form-panel" aria-labelledby="form-title">

@@ -44,7 +44,7 @@
                     </div>
                     <div class="build-note">
                         <span class="note-icon" aria-hidden="true">i</span>
-                        <p><strong>Early access, honestly.</strong> Business profiles and readable PDF text extraction work today. AI website generation and publishing are still in development.</p>
+                        <p><strong>Early access, honestly.</strong> Profiles, PDF text extraction, AI drafts, editing, and publishing work today. Social scraping and image text recognition are not available yet.</p>
                     </div>
                 </div>
 
@@ -97,7 +97,7 @@
                         <p class="section-kicker">NO WRONG TURNS</p>
                         <h2 id="journey-title">A simple start. <span>One step at a time.</span></h2>
                     </div>
-                    <p class="section-intro">Bring the information you already have. Your business profile keeps it together while we build the next parts.</p>
+                    <p class="section-intro">Bring the information you already have. Your business profile keeps it together through drafting and publishing.</p>
                 </div>
                 <div class="steps-grid grid grid-cols-1 gap-4 md:grid-cols-3">
                     <article class="step-card">
@@ -118,8 +118,8 @@
                         <span class="step-number">03</span>
                         <span class="step-symbol" aria-hidden="true">✳</span>
                         <h3>Shape your website</h3>
-                        <p>AI-assisted drafting, editing, and publishing are planned next—not available yet.</p>
-                        <span class="step-status planned"><i></i> In development</span>
+                        <p>Generate a draft, review and edit the details, then publish a public snapshot.</p>
+                        <span class="step-status"><i></i> Available now</span>
                     </article>
                 </div>
             </section>

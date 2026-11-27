@@ -67,6 +67,9 @@
                 @if(session('draft_status'))
                     <div class="generation-alert success-alert" role="status">{{ session('draft_status') }}</div>
                 @endif
+                @if(session('duplicate_status'))
+                    <div class="generation-alert success-alert" role="status">{{ session('duplicate_status') }}</div>
+                @endif
                 @if(session('publish_status'))
                     <div class="generation-alert success-alert" role="status">
                         {{ session('publish_status') }}
@@ -315,7 +318,6 @@
                 @include('businesses._uploads')
             </section>
 
-            <p class="workspace-note"><span class="note-icon" aria-hidden="true">i</span> Full website publishing is still in development. This source-backed AI draft is an early preview; check every detail before using it.</p>
         </main>
 
         <footer class="site-footer mx-auto flex flex-wrap items-center justify-between gap-4">
