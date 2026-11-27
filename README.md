@@ -1,58 +1,87 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# AI Builds My Website
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+An AI-assisted website builder prototype for small businesses. An owner enters business details, uploads supporting materials, reviews an AI-generated content draft, edits it, and publishes an approved snapshot at a public URL.
 
-## About Laravel
+## What works today
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- Create a business profile with its name, city, and optional website/social links.
+- Upload up to 10 PDF or image files per request (10 MB each).
+- Extract text from readable PDFs. Photos are stored, but are not analyzed; scanned PDFs have no OCR.
+- Generate a source-grounded website content draft using Google Gemini.
+- Review reported missing details and conflicts, then edit the tagline and facts.
+- Publish a reviewed snapshot at `/sites/{slug}`. Draft edits do not change the public version until republished.
+- Reopen a matching business profile instead of creating a duplicate when the same browser session submits the same name and city (case and surrounding whitespace are ignored).
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## How it works
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. **Routes** in `routes/web.php` connect browser URLs to controllers.
+2. **Controllers** validate requests and coordinate profile creation, uploads, drafting, editing, and publishing.
+3. **Models** represent businesses and their uploaded documents in MySQL/MariaDB.
+4. **Services** extract PDF text and call Gemini to create a validated draft.
+5. **Blade views** render the owner workspace and public website.
 
-## Learning Laravel
+The `businesses` table stores entered details, draft JSON, and a separate published-content snapshot. The `documents` table records uploaded files and extracted text. Files are stored through Laravel's public storage disk.
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## Requirements
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+- PHP 8.3 or later with the extensions required by Laravel and PDO MySQL
+- Composer
+- Node.js and npm
+- MySQL or MariaDB
+- A Google Gemini API key to use AI draft generation (optional for the rest of the app)
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+## Local setup
 
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+Run these commands from the project directory:
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+composer install
+if [ ! -f .env ]; then cp .env.example .env; fi
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+This keeps an existing `.env` file intact. Edit `.env` on your own machine. Set the database connection details for a MySQL/MariaDB database and set `APP_URL` to the URL where you will run the app. To enable draft generation, add your own `GEMINI_API_KEY`. **Never commit `.env` or share your API key.**
 
-## Contributing
+Create the configured database and ensure the database user can access it. Then run:
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```bash
+php artisan key:generate
+php artisan migrate
+php artisan storage:link
+npm install
+npm run build
+php artisan serve --host=0.0.0.0 --port=8000
+```
 
-## Code of Conduct
+Open the address printed by Artisan. In Codespaces, make port 8000 public using the Ports panel and open its forwarded URL.
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## Use the app
 
-## Security Vulnerabilities
+1. Create a business profile.
+2. Upload PDFs, price lists, or photos. Only readable PDF text is extracted.
+3. Choose **Generate a draft**. The app sends the business name, city, and up to 10 recent extracted documents (up to 10,000 characters per document) to Gemini.
+4. Review the draft, missing information, conflicts, and source evidence. Edit it if needed.
+5. Tick the review confirmation and publish. The public page is available at `/sites/{slug}`.
+6. Publish again after changing the draft to update the public snapshot.
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Privacy, safety, and current limitations
 
-## License
+- Uploaded document text is treated as untrusted evidence, not as instructions to the AI. AI output is validated against source evidence; the app does not intentionally fill unknown business facts with invented specifics.
+- Unresolved conflicting facts and source evidence are omitted from public pages. Owner-edited facts are marked as business-provided.
+- Social links are stored but are **not scraped or opened**. The draft identifies provided links as unread.
+- Image analysis and OCR for scanned PDFs are not implemented.
+- Gemini free-tier data handling is controlled by Google. Avoid uploading confidential material; Google's free tier may use submitted content to improve its products.
+- There is no user account system. Edit access is tied to the browser session that created the profile. Clearing or losing that session makes the profile read-only. A different browser session may create a separate profile with the same name and city.
+- The public site is served by this Laravel application. A Codespaces forwarded URL is for development/demo use, not permanent production hosting.
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## Checks
+
+Run the automated tests and build the frontend assets:
+
+```bash
+php artisan test
+npm run build
+```
+
+## Project decisions
+
+See [DECISIONS.md](DECISIONS.md) for the reasoning behind source-grounded generation, session ownership, duplicate handling, and publication snapshots.
