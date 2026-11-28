@@ -5,7 +5,7 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-FROM php:8.3-apache
+FROM php:8.4-apache
 RUN apt-get update && apt-get install -y \
     git unzip poppler-utils libzip-dev libpng-dev libjpeg-dev libfreetype6-dev libonig-dev libxml2-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
