@@ -19,7 +19,7 @@
             @csrf
             <label class="file-picker" for="business-files">
                 <span class="file-picker-icon" aria-hidden="true">↑</span>
-                <strong>Choose files for your journey</strong>
+                <strong>Choose business materials</strong>
                 <span>PDF, JPG, PNG, or WEBP · Up to 10 files, 10 MB each</span>
             </label>
             <input class="file-input" id="business-files" type="file" name="files[]" multiple accept=".pdf,.jpg,.jpeg,.png,.webp" required>
@@ -43,7 +43,7 @@
                 <li class="file-row">
                     <span class="document-icon" aria-hidden="true">{{ $doc->kind === 'image' ? '▧' : '▤' }}</span>
                     <div class="file-details">
-                        <a href="{{ asset('storage/' . $doc->stored_path) }}" target="_blank" rel="noopener noreferrer">{{ $doc->original_name }}</a>
+                        <a href="{{ route('documents.download', [$business, $doc]) }}">{{ $doc->original_name }}</a>
                         <span>{{ ucfirst($doc->kind) }} · {{ number_format($doc->size / 1024, 0) }} KB</span>
                         @if($doc->extraction_error)
                             <span class="extraction-error">{{ $doc->extraction_error }}</span>

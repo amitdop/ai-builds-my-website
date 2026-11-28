@@ -27,7 +27,9 @@ class PublishWebsiteTest extends TestCase
 
         $business->refresh();
         $this->assertSame("sample-cafe-pune-{$business->id}", $business->slug);
-        $this->assertSame($business->generated_content, $business->published_content);
+        $this->assertSame($business->generated_content['tagline'], $business->published_content['tagline']);
+        $this->assertSame($business->name, $business->published_content['business_name']);
+        $this->assertSame($business->city, $business->published_content['city']);
         $this->assertSame('published', $business->status);
         $this->assertNotNull($business->published_at);
     }
@@ -103,7 +105,14 @@ class PublishWebsiteTest extends TestCase
         ]);
         $business->update([
             'slug' => 'sample-cafe-public',
-            'published_content' => $business->generated_content,
+            'published_content' => array_merge($business->generated_content, [
+                'business_name' => $business->name,
+                'city' => $business->city,
+                'links' => [
+                    'Google Business' => 'javascript:alert(2)',
+                    'Website' => 'https://example.com/business',
+                ],
+            ]),
             'published_at' => now(),
             'status' => 'published',
         ]);
@@ -130,6 +139,7 @@ class PublishWebsiteTest extends TestCase
             ->assertDontSee('PRIVATE MENU.pdf')
             ->assertDontSee('We serve espresso.')
             ->assertDontSee('secret-price-list.pdf')
+            ->assertDontSee(self::OWNER_TOKEN)
             ->assertDontSee('9 am to 5 pm')
             ->assertDontSee('10 am to 6 pm')
             ->assertDontSee('javascript:alert');
@@ -145,6 +155,9 @@ class PublishWebsiteTest extends TestCase
             ],
             'slug' => 'sample-cafe-public',
             'published_content' => [
+                'business_name' => 'Sample Cafe',
+                'city' => 'Pune',
+                'links' => ['Website' => 'https://published.example'],
                 'tagline' => 'A warm welcome.',
                 'facts' => [],
             ],
@@ -161,6 +174,7 @@ class PublishWebsiteTest extends TestCase
         $this->get(route('sites.show', $business->slug))
             ->assertOk()
             ->assertSee('A warm welcome.')
+            ->assertSee('https://published.example')
             ->assertDontSee('A newer private draft.');
 
         $this->withSession([
@@ -173,6 +187,32 @@ class PublishWebsiteTest extends TestCase
             ->assertOk()
             ->assertSee('A newer private draft.')
             ->assertDontSee('A warm welcome.');
+    }
+
+    public function test_public_site_uses_profile_details_from_the_published_snapshot(): void
+    {
+        $business = $this->createOwnedBusiness([
+            'name' => 'Current private name',
+            'city' => 'Current private city',
+            'website_url' => 'https://current.example',
+            'slug' => 'sample-cafe-snapshot',
+            'published_content' => [
+                'business_name' => 'Approved business name',
+                'city' => 'Approved city',
+                'links' => ['Website' => 'https://approved.example'],
+                'tagline' => 'Approved tagline.',
+                'facts' => [],
+            ],
+        ]);
+
+        $this->get(route('sites.show', $business->slug))
+            ->assertOk()
+            ->assertSee('Approved business name')
+            ->assertSee('Approved city')
+            ->assertSee('https://approved.example')
+            ->assertDontSee('Current private name')
+            ->assertDontSee('Current private city')
+            ->assertDontSee('https://current.example');
     }
 
     public function test_business_creation_rejects_non_http_links(): void

@@ -3,13 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Business;
+use App\Models\Document;
 use App\Services\TextExtractor;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class DocumentController extends Controller
 {
     // Receive uploaded files for one business and save them.
-    public function store(Request $request, Business $business, TextExtractor $textExtractor)
+    public function store(Request $request, Business $business, TextExtractor $textExtractor): RedirectResponse
     {
         abort_unless(
             $business->isOwnedBySession($request->session()->get(Business::OWNER_SESSION_KEY)),
@@ -31,8 +35,7 @@ class DocumentController extends Controller
             $size = $file->getSize();
             $name = $file->getClientOriginalName();
 
-            // Saved with a random name inside storage/app/public/documents/{id}
-            $path = $file->store('documents/'.$business->id, 'public');
+            $path = $file->store('documents/'.$business->id, 'local');
 
             $document = $business->documents()->create([
                 'original_name' => $name,
@@ -48,5 +51,25 @@ class DocumentController extends Controller
         return redirect()
             ->route('businesses.show', $business)
             ->with('status', 'Files uploaded successfully.');
+    }
+
+    public function download(
+        Request $request,
+        Business $business,
+        Document $document,
+    ): BinaryFileResponse {
+        abort_unless(
+            $business->isOwnedBySession($request->session()->get(Business::OWNER_SESSION_KEY)),
+            404,
+        );
+
+        $document = $business->documents()->findOrFail($document->getKey());
+        $disk = Storage::disk('local');
+        abort_unless($disk->exists($document->stored_path), 404);
+
+        return response()->download(
+            $disk->path($document->stored_path),
+            basename(str_replace('\\', '/', $document->original_name)),
+        );
     }
 }

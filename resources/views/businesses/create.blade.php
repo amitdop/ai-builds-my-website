@@ -24,11 +24,11 @@
 
         <main class="form-layout mx-auto grid grid-cols-1 gap-10 lg:grid-cols-2">
             <section class="form-intro">
-                <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR FIRST WAYPOINT</p>
-                <h1>Every great journey starts <span>with the basics.</span></h1>
-                <p class="hero-description">Tell us a little about your business. Add the places where customers can already find you.</p>
+                <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR BUSINESS PROFILE</p>
+                <h1>Start with the details <span>that make it yours.</span></h1>
+                <p class="hero-description">Tell us about your business and add the places where customers can already find you.</p>
 
-                <div class="route-list" aria-label="Getting started">
+                <div class="route-list" aria-label="Website creation steps">
                     <div class="route-step active">
                         <span class="route-step-mark">01</span>
                         <div><strong>Your business</strong><span>Name and city</span></div>

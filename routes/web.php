@@ -25,3 +25,6 @@ Route::post('/businesses/{business}/publish', [BusinessController::class, 'publi
     ->name('businesses.publish');
 
 Route::post('/businesses/{business}/documents', [DocumentController::class, 'store'])->name('documents.store');
+Route::get('/businesses/{business}/documents/{document}', [DocumentController::class, 'download'])
+    ->scopeBindings()
+    ->name('documents.download');

@@ -63,11 +63,11 @@ class BusinessController extends Controller
     // Show one saved business.
     public function show(Request $request, Business $business)
     {
+        $this->authorizeOwnerSession($business, $request);
+
         return view('businesses.show', [
             'business' => $business,
-            'canManageBusiness' => $business->isOwnedBySession(
-                $request->session()->get(Business::OWNER_SESSION_KEY),
-            ),
+            'canManageBusiness' => true,
             'hasUnpublishedChanges' => is_array($business->generated_content)
                 && (
                     $business->published_content === null
@@ -209,7 +209,16 @@ class BusinessController extends Controller
 
         $business->update([
             'slug' => $slug,
-            'published_content' => $content,
+            'published_content' => array_merge($content, [
+                'business_name' => $business->name,
+                'city' => $business->city,
+                'links' => [
+                    'Google Business' => $business->google_business_url,
+                    'Facebook' => $business->facebook_url,
+                    'Instagram' => $business->instagram_url,
+                    'Website' => $business->website_url,
+                ],
+            ]),
             'published_at' => now(),
             'status' => 'published',
             'error_message' => null,

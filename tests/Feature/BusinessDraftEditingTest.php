@@ -161,6 +161,30 @@ class BusinessDraftEditingTest extends TestCase
             ->assertDontSee('<script>alert(1)</script>', false);
     }
 
+    public function test_a_different_session_cannot_view_the_private_business_workspace(): void
+    {
+        $business = $this->createOwnedBusiness();
+
+        $response = $this->withSession([
+            Business::OWNER_SESSION_KEY => 'another-browser-session',
+        ])->get(route('businesses.show', $business));
+
+        $response->assertNotFound()
+            ->assertDontSee('We serve espresso.');
+    }
+
+    public function test_owner_session_can_view_the_private_business_workspace(): void
+    {
+        $business = $this->createOwnedBusiness();
+
+        $response = $this->withSession([
+            Business::OWNER_SESSION_KEY => self::OWNER_TOKEN,
+        ])->get(route('businesses.show', $business));
+
+        $response->assertOk()
+            ->assertSee('We serve espresso.');
+    }
+
     public function test_business_creation_stores_only_a_hash_of_the_owner_session_token(): void
     {
         $response = $this->withSession([

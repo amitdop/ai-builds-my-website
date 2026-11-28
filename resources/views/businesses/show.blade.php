@@ -34,7 +34,7 @@
                     <span class="orbit-core">✳</span>
                 </div>
                 <div class="workspace-title">
-                    <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR BUSINESS WAYPOINT</p>
+                    <p class="eyebrow"><span class="eyebrow-dot"></span> YOUR BUSINESS WORKSPACE</p>
                     <h1>{{ $business->name }}</h1>
                     <p class="workspace-subtitle">A starting point for your business's online presence.</p>
                 </div>
@@ -266,7 +266,7 @@
                 <div class="content-heading">
                     <div>
                         <p class="section-kicker">THE DETAILS YOU SHARED</p>
-                        <h2 id="facts-title">Your business map</h2>
+                        <h2 id="facts-title">Business details</h2>
                     </div>
                     <span class="fact-location"><span aria-hidden="true">⌖</span> {{ $business->city }}</span>
                 </div>

@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Document;
+use Illuminate\Support\Facades\Storage;
 use Smalot\PdfParser\Parser;
 
 class TextExtractor
@@ -18,7 +19,7 @@ class TextExtractor
         }
 
         try {
-            $path = storage_path('app/public/'.$doc->stored_path);
+            $path = Storage::disk('local')->path($doc->stored_path);
             $text = (new Parser)->parseFile($path)->getText();
 
             // Clean up: fix bad characters, collapse extra spaces and line breaks.

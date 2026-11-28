@@ -32,12 +32,7 @@ class PublishedSiteController extends Controller
             ])
             ->values();
 
-        $links = collect([
-            'Google Business' => $business->google_business_url,
-            'Facebook' => $business->facebook_url,
-            'Instagram' => $business->instagram_url,
-            'Website' => $business->website_url,
-        ])
+        $links = collect(is_array($content['links'] ?? null) ? $content['links'] : [])
             ->filter(fn (mixed $url): bool => $this->isPublicWebUrl($url))
             ->map(fn (string $url, string $label): array => [
                 'label' => $label,
@@ -46,7 +41,10 @@ class PublishedSiteController extends Controller
             ->values();
 
         return view('sites.show', [
-            'business' => $business,
+            'business' => [
+                'name' => $content['business_name'] ?? '',
+                'city' => $content['city'] ?? '',
+            ],
             'content' => [
                 'tagline' => $content['tagline'],
                 'facts' => $facts,
